@@ -42,4 +42,23 @@ contract Library {
         availableBooks.push(_title);
         emit BookAdded(_title);
     }
+
+    function borrowBook(string memory _title) public {
+        require(Books[_title].available, "This book is unavailable");
+        Books[_title].borrower = msg.sender;
+
+        string[] memory newAvailableBooks = new string[](availableBooks.length - 1);
+        uint newAvailableBooksIndex = 0;
+
+        uint len = availableBooks.length;
+        Books[_title].available = false;
+        for(uint i = 0; i < len; i++) {
+            if (Books[availableBooks[i]].available) {
+                newAvailableBooks[newAvailableBooksIndex] = availableBooks[i];
+                newAvailableBooksIndex++;
+            }
+        }
+        delete availableBooks;
+        availableBooks = newAvailableBooks;
+    }
 }
