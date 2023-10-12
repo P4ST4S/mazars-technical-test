@@ -43,10 +43,7 @@ contract Library {
         emit BookAdded(_title);
     }
 
-    function borrowBook(string memory _title) public {
-        require(Books[_title].available, "This book is unavailable");
-        Books[_title].borrower = msg.sender;
-
+    function removeBookOfArray(string memory _title) private {
         string[] memory newAvailableBooks = new string[](availableBooks.length - 1);
         uint newAvailableBooksIndex = 0;
 
@@ -60,5 +57,30 @@ contract Library {
         }
         delete availableBooks;
         availableBooks = newAvailableBooks;
+    }
+
+    function borrowBook(string memory _title) public {
+        require(Books[_title].available, "This book is unavailable");
+        Books[_title].borrower = msg.sender;
+
+        removeBookOfArray(_title);
+
+        emit BookBorrowed(_title, msg.sender);
+    }
+
+    function returnBook(string memory _title) public {
+        require(Books[_title].borrower == msg.sender, "You don't have this book");
+        Books[_title].available = true;
+        availableBooks.push(_title);
+    }
+
+    function removeBook(string memory _title) public {
+        require(bytes(Books[_title].title).length > 0, "This book doesn't exist");
+        bookCount--;
+        delete Books[_title];
+
+        removeBookOfArray(_title);
+
+        emit BookRemoved(_title);
     }
 }
