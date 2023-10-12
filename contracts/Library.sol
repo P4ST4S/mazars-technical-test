@@ -2,23 +2,25 @@
 pragma solidity ^0.8.21;
 
 contract Library {
-    address public owner;
+    address owner;
+    uint public bookCount;
 
     struct book {
         string title;
-        address borrower;
+        string author;
         bool available;
+        address borrower;
     }
 
+    string[] availableBooks;
     mapping(string => book) Books;
-    uint public bookCount;
 
     constructor() {
         owner = msg.sender;
     }
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner can call this function");
+        require(msg.sender == owner, "Only owner can do that");
         _;
     }
 
@@ -27,34 +29,17 @@ contract Library {
     event BookReturned(string title);
     event BookRemoved(string title);
 
-    function addBook(string memory _title) public onlyOwner {
+    function getAvailableBooks() public view returns(string[] memory) {
+        return availableBooks;
+    }
+
+    function addBook(string memory _title, string memory _author) public onlyOwner {
+        require(bytes(_title).length > 0, "You must enter a title for the book");
+        require(bytes(_author).length > 0, "You must enter an author for the book");
+        require(!Books[_title].available || Books[_title].borrower != address(0), "This book already exist");
         bookCount++;
-        Books[_title] = book(_title, address(0), true);
+        Books[_title] = book(_title, _author, true, address(0));
+        availableBooks.push(_title);
         emit BookAdded(_title);
-    }
-
-    function borrowBook(string calldata _title) public {
-        require(bytes(Books[_title].title).length > 0, "This book doesn't exist");
-        require(Books[_title].available, "This book is not available for borrowing");
-
-        Books[_title].borrower = msg.sender;
-        Books[_title].available = false;
-        emit BookBorrowed(_title, msg.sender);
-    }
-
-    function returnBook(string calldata _title) public {
-        require(bytes(Books[_title].title).length > 0, "This book doesn't exist");
-        require(Books[_title].borrower == msg.sender, "You didn't borrow this book");
-
-        Books[_title].borrower = address(0);
-        Books[_title].available = true;
-        emit BookReturned(_title);
-    }
-
-    function removeBook(string calldata _title) public onlyOwner {
-        require(bytes(Books[_title].title).length > 0, "This book doesn't exist");
-        bookCount--;
-        delete Books[_title];
-        emit BookRemoved(_title);
     }
 }
