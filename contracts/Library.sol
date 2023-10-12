@@ -4,6 +4,7 @@ pragma solidity ^0.8.21;
 contract Library {
     address owner;
     uint public bookCount;
+    bool isOpened;
 
     struct book {
         string title;
@@ -24,12 +25,17 @@ contract Library {
         _;
     }
 
+    modifier libraryIsOpened() {
+        require(isOpened, "Library isn't opened");
+        _;
+    }
+
     event BookAdded(string title);
     event BookBorrowed(string title, address borrower);
     event BookReturned(string title);
     event BookRemoved(string title);
 
-    function getAvailableBooks() public view returns(string[] memory) {
+    function getAvailableBooks() public view libraryIsOpened returns(string[] memory) {
         return availableBooks;
     }
 
@@ -43,7 +49,7 @@ contract Library {
         emit BookAdded(_title);
     }
 
-    function removeBookOfArray(string memory _title) private {
+    function removeBookOfArray(string memory _title) private libraryIsOpened {
         string[] memory newAvailableBooks = new string[](availableBooks.length - 1);
         uint newAvailableBooksIndex = 0;
 
@@ -59,7 +65,7 @@ contract Library {
         availableBooks = newAvailableBooks;
     }
 
-    function borrowBook(string memory _title) public {
+    function borrowBook(string memory _title) public libraryIsOpened {
         require(Books[_title].available, "This book is unavailable");
         Books[_title].borrower = msg.sender;
 
@@ -68,13 +74,13 @@ contract Library {
         emit BookBorrowed(_title, msg.sender);
     }
 
-    function returnBook(string memory _title) public {
+    function returnBook(string memory _title) public libraryIsOpened {
         require(Books[_title].borrower == msg.sender, "You don't have this book");
         Books[_title].available = true;
         availableBooks.push(_title);
     }
 
-    function removeBook(string memory _title) public {
+    function removeBook(string memory _title) public libraryIsOpened {
         require(bytes(Books[_title].title).length > 0, "This book doesn't exist");
         bookCount--;
         delete Books[_title];
@@ -82,5 +88,9 @@ contract Library {
         removeBookOfArray(_title);
 
         emit BookRemoved(_title);
+    }
+
+    function toggleLibrary() public onlyOwner {
+        isOpened = !isOpened;
     }
 }
